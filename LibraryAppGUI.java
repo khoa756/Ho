@@ -356,6 +356,15 @@ public class LibraryAppGUI extends Application {
                             .orElse(null);
                 }
                 if (doc != null) {
+                    // Kiểm tra xem tài liệu có đang được mượn không
+                    Document finalDoc = doc;
+                    boolean isBorrowed = library.getAllUsers().values().stream()
+                            .anyMatch(user -> user.getBorrowedDocuments().containsKey(finalDoc.getId()) && user.getBorrowedDocuments().get(finalDoc.getId()) > 0);
+                    if (isBorrowed) {
+                        showAlert("Error", "Cannot remove document because it is currently borrowed!");
+                        return;
+                    }
+                    // Nếu không bị mượn, kiểm tra số lượng và tiến hành xóa
                     if (quantityToRemove > doc.getQuantity()) {
                         showAlert("Error", "Quantity to remove exceeds available copies (" + doc.getQuantity() + ").");
                     } else {
@@ -363,11 +372,12 @@ public class LibraryAppGUI extends Application {
                         if (doc.getQuantity() == 0) {
                             library.removeDocumentById(doc.getId());
                         }
+                        saveDocumentsToFile();
                         showAlert("Success", "Removed " + quantityToRemove + " copies of " + doc.getTitle());
                         refreshTable();
                     }
                 } else {
-                    showAlert("Error", "Document not found.");
+                    showAlert("Error", "Document does not exist!");
                 }
             } catch (NumberFormatException e) {
                 showAlert("Error", "Invalid quantity. Please enter a number.");
