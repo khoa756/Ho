@@ -70,7 +70,20 @@ public class Library {
      * @param id The ID of the document to remove.
      */
     public void removeDocumentById(String id) {
-        documents.removeIf(doc -> doc.getId().equals(id));
+        Document doc = findById(id);
+        if (doc == null) {
+            throw new IllegalArgumentException("Document does not exist!");
+        }
+
+        // Kiểm tra xem tài liệu có đang được mượn không
+        boolean isBorrowed = users.values().stream()
+                .anyMatch(user -> user.getBorrowedDocuments().containsKey(id) && user.getBorrowedDocuments().get(id) > 0);
+        if (isBorrowed) {
+            throw new IllegalStateException("Cannot remove document because it is currently borrowed!");
+        }
+
+        // Nếu không bị mượn, tiến hành xóa
+        documents.removeIf(document -> document.getId().equals(id));
         saveDocumentsToFile();
     }
 
